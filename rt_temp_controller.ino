@@ -15,10 +15,15 @@
 #include "bitmaps/ArduinoIcon.h"   // bitmap 
 
 
+/* constants (thou art not evil) */
+const float pi = 3.1416;  // good ole pi
+const int SCREEN_WIDTH = 128;    // KS0108 LCD max screen width x
+const int SCREEN_HEIGHT = 64;    // KS0108 LCD max screen height y
+
 /* global variables (thou art evil) */
 unsigned int x = 0;
-float y = 0.0;
-float pi = 3.1416;
+//float y = 0.0;
+float y[360];  // this is the y array
 
 void setup()  {
   GLCD.Init(NON_INVERTED);     // initialise the library, non inverted writes pixels onto a clear screen
@@ -34,12 +39,14 @@ void setup()  {
  * x = 0 to 360
  */
 int xToScreen(float x) {
-  return (int(x * (128.0/360.0)));
+  return (int(x * (SCREEN_WIDTH/360.0)));
 }
 
 int yToScreen(float y) {
-  return(int(32 - y*32));
+  return(int(SCREEN_HEIGHT/2 - y*SCREEN_HEIGHT/2));
 }
+
+
 
 void loop()
 {
@@ -47,8 +54,8 @@ void loop()
   {
     if (x <= 360 )  
     {
-      y=sin(x*pi/180);  // argument degrees converted to radians
-      GLCD.SetDot(xToScreen((float)x), yToScreen(y), BLACK);
+      y[x] = sin(x*pi/180);  // argument degrees converted to radians
+      GLCD.SetDot(xToScreen((float)x), yToScreen(y[x]), BLACK);
       x++;
     }
     else
