@@ -30,9 +30,8 @@ int graphYMax = 50;  // the bottom limit of the graph
 void setup()  {
   GLCD.Init(NON_INVERTED);     // initialise the library, non inverted writes pixels onto a clear screen
   GLCD.ClearScreen();
-  GLCD.DrawBitmap(ArduinoIcon, 32,0, BLACK); //draw the bitmap at the given x,y position
-  GLCD.ClearScreen();
   GLCD.DrawRect(graphXMin,graphYMin,(graphXMax-graphXMin),(graphYMax-graphYMin),BLACK);
+  GLCD.SelectFont(System5x7); // switch to fixed width system font
   Serial.begin(9600);  // open the serial port for debugging
 }
 
@@ -41,7 +40,7 @@ void setup()  {
  * graphXMin and graphXmax
  */
 int xToScreen(float x) {
-  return (int(x * (graphXMax-graphXMin)/360.0 + graphXMin ));
+  return (int(x * (graphXMax-graphXMin)/360.0 + graphXMin));
 }
 
 /* Converts actual Y value to screen coordinate
@@ -60,6 +59,8 @@ void loop()
     {
       y[x] = sin(x*pi/180);  // argument degrees converted to radians
       GLCD.SetDot(xToScreen((float)x), yToScreen(y[x]), BLACK);
+      GLCD.CursorTo(0, 0);
+      GLCD.PrintNumber(x);
       x++;
     }
     else
