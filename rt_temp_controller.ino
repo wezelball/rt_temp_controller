@@ -22,15 +22,15 @@ const int SCREEN_HEIGHT = 64;    // KS0108 LCD max screen height y
 
 /* global variables (thou art evil) */
 unsigned int x = 0;
-float y1[360];       // this is the channel 1 y array
-float y2[360];       // this is the channel 2 y array
+
 int graphXMin = 20;  // the leftmost limit of the graph
 int graphXMax = SCREEN_WIDTH-1;  // the rightmost limit of the graph
 int graphYMin = 10;  // the top limit of the graph
 int graphYMax = SCREEN_HEIGHT-1;  // the bottom limit of the graph
-float ch1Setpoint = 0.5;  // ch.1 temperature setpoint
+float ch1Setpoint[107];   // ch.1 temperature setpoint
 float ch2Setpoint = 0.5;  // ch.1 temperature setpoint
-
+float y1[107];       // this is the channel 1 y array
+                     // graphXMax - graphXMin
 void setup()  {
   GLCD.Init(NON_INVERTED);     // initialise the library, non inverted writes pixels onto a clear screen
   GLCD.ClearScreen();
@@ -44,7 +44,15 @@ void setup()  {
  * graphXMin and graphXmax
  */
 int xToScreen(float x, int screenXMin, int screenXMax) {
-  return (int(x * (screenXMax-screenXMin)/360.0 + screenXMin));
+  //return (int(x * (screenXMax-screenXMin)/360.0 + screenXMin));
+  if (x <= graphXMax)
+  {
+    return (int(x + screenXMin));
+  }
+  else
+  {
+    return (int (graphXMax));
+  }
 }
 
 /* Converts actual Y value to screen coordinate
@@ -59,41 +67,71 @@ int yToScreen(float y, int screenYMin, int screenYMax) {
  * Prints current information line temperature, output,
  * and setpoint to go at the top of the display
  */
-void printCurrent() {
+void printCurrent(int channel, float value, int setpoint, int output) {
+  GLCD.GotoXY(0, 0);
+  GLCD.Puts("Ch: ");
+  GLCD.GotoXY(20,0);
+  GLCD.PrintNumber(channel);  // channel #
+  GLCD.GotoXY(30,0);
+  GLCD.print(value,1);        // temperature value
+  GLCD.GotoXY(65,0);
+  GLCD.Puts("S: ");
+  GLCD.GotoXY(75,0);
+  GLCD.PrintNumber(setpoint); //setpoint
+  GLCD.GotoXY(95,0);
+  GLCD.Puts("O: ");
+  GLCD.GotoXY(110,0);
+  GLCD.PrintNumber(output);   // PWM output
+  // redraw rectangle
+  GLCD.DrawRect(graphXMin,graphYMin,(graphXMax-graphXMin),(graphYMax-graphYMin),BLACK);
   
+  // print the vertical axis numbers
+  GLCD.GotoXY(4,graphYMin);
+  GLCD.PrintNumber(1);
+  GLCD.GotoXY(4,graphYMin -2 + (graphYMax-graphYMin)/2);
+  GLCD.PrintNumber(0);
+  GLCD.GotoXY(4,graphYMax-8);
+  GLCD.PrintNumber(-1);
 }
 
 void loop()
 {
+  unsigned int i=0,j=0;
+  
   while (1)  
   {
-    if (x <= 360 )  
+    // an equation with a little noise
+    y1[i] = 0.0 + 0.002 * random(-100,100);  // argument degrees converted to radians
+    ch1Setpoint[i]=0.0;
+    
+    // update the non-graph display values
+    printCurrent(1,y1[i],30,80 );
+
+    // the 106/107 is related to graphXMax-graphXMin
+    if (i >= 106) 
     {
-      y1[x] = sin(x*pi/180);  // argument degrees converted to radians
-      y2[x] = cos(x*pi/180);
-      GLCD.SetDot(xToScreen((float)x,graphXMin,graphXMax), yToScreen(y1[x],graphYMin,graphYMax), BLACK);
-      GLCD.GotoXY(0, 0);
-      GLCD.Puts("Ch1: ");
-      GLCD.GotoXY(25,0);
-      GLCD.print(y1[x],1);
-      GLCD.GotoXY(50,0);
-      GLCD.Puts("SP: ");
-      GLCD.GotoXY(75,0);
-      GLCD.PrintNumber(ch1Setpoint);
-      GLCD.GotoXY(85,0);
-      GLCD.Puts("Out: ");
-      GLCD.GotoXY(110,0);
-      GLCD.PrintNumber(85);
-      x++;
+      for (j = 0; j < 107; j++)
+      {
+        // erase old dots
+        GLCD.SetDot(xToScreen((float)j,graphXMin,graphXMax), yToScreen(y1[j],graphYMin,graphYMax), WHITE);
+        GLCD.SetDot(xToScreen((float)j,graphXMin,graphXMax), yToScreen(ch1Setpoint[j],graphYMin,graphYMax), WHITE);
+        // move values down by one
+        y1[j] = y1[j+1];
+        // redraw updated graph
+        GLCD.SetDot(xToScreen((float)j,graphXMin,graphXMax), yToScreen(y1[j],graphYMin,graphYMax), BLACK);
+        GLCD.SetDot(xToScreen((float)j,graphXMin,graphXMax), yToScreen(ch1Setpoint[j],graphYMin,graphYMax), BLACK);
+      }
+      // draw the new point
+      GLCD.SetDot(xToScreen((float)i,graphXMin,graphXMax), yToScreen(y1[i],graphYMin,graphYMax), BLACK);
+      GLCD.SetDot(xToScreen((float)i,graphXMin,graphXMax), yToScreen(ch1Setpoint[i],graphYMin,graphYMax), BLACK);
     }
     else
     {
-      GLCD.ClearScreen();
-      x = 0;
-      /* Draw the outer bounds of the graph area */
-      GLCD.DrawRect(graphXMin,graphYMin,(graphXMax-graphXMin),(graphYMax-graphYMin),BLACK);
+      // this only executes until while the x values are less than graphXMax
+      GLCD.SetDot(xToScreen((float)i,graphXMin,graphXMax), yToScreen(y1[i],graphYMin,graphYMax), BLACK);
+      GLCD.SetDot(xToScreen((float)i,graphXMin,graphXMax), yToScreen(ch1Setpoint[i],graphYMin,graphYMax), BLACK);
+      i++;
     }
-    
-    delay(200);  //milliseconds
+    delay(1000);  // update time, in milliseconds
   }   
  }
