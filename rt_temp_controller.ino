@@ -16,29 +16,30 @@
 
 
 /* constants (thou art not evil) */
-const float pi = 3.1416;  // good ole pi
-const int SCREEN_WIDTH = 128;    // KS0108 LCD max screen width x
-const int SCREEN_HEIGHT = 64;    // KS0108 LCD max screen height y
+const float pi = 3.1416;          // good ole pi
+const int SCREEN_WIDTH = 128;     // KS0108 LCD max screen width x
+const int SCREEN_HEIGHT = 64;     // KS0108 LCD max screen height y
 
 /* global variables (thou art evil) */
-//unsigned int x = 0;
-unsigned int channelSelected = 1;
-
-int graphXMin = 20;  // the leftmost limit of the graph
+unsigned int channelSelected = 1;// can display 2 channels
+unsigned int i=0,j=0;            // loop counter variables
+int graphXMin = 20;              // the leftmost limit of the graph
 int graphXMax = SCREEN_WIDTH-1;  // the rightmost limit of the graph
-int graphYMin = 10;  // the top limit of the graph
-int graphYMax = SCREEN_HEIGHT-1;  // the bottom limit of the graph
-float ch1Setpoint[107];    // ch.1 temperature setpoint
-float ch2Setpoint[107];    // ch.2 temperature setpoint
-float y1[107];             // this is the channel 1 y array
-float y2[107];             // graphXMax - graphXMin
+int graphYMin = 10;              // the top limit of the graph
+int graphYMax = SCREEN_HEIGHT-1; // the bottom limit of the graph
+float ch1Setpoint[107];          // ch.1 temperature setpoint
+float ch2Setpoint[107];          // ch.2 temperature setpoint
+float y1[107];                   // this is the channel 1 y array
+float y2[107];                   // graphXMax - graphXMin
+unsigned long startMillis;       // for testing only
+boolean timing=false;            // for testing only
     
 void setup()  {
-  GLCD.Init(NON_INVERTED);     // initialise the library, non inverted writes pixels onto a clear screen
+  GLCD.Init(NON_INVERTED);       // initialise the library, non inverted writes pixels onto a clear screen
   GLCD.ClearScreen();
   GLCD.DrawRect(graphXMin,graphYMin,(graphXMax-graphXMin),(graphYMax-graphYMin),BLACK);
-  GLCD.SelectFont(System5x7); // switch to fixed width system font
-  Serial.begin(9600);  // open the serial port for debugging
+  GLCD.SelectFont(System5x7);   // switch to fixed width system font
+  Serial.begin(9600);           // open the serial port for debugging
 }
 
 /* Converts actual X value to screen coordinate
@@ -108,47 +109,100 @@ void drawDot(int x, float y)
 
 void loop()
 {
-  unsigned int i=0,j=0;
-  
-  while (1)  
-  {
+    // set up a timer for switching channels
+    // this is for testing only
+    if (!timing)
+    {
+      startMillis = millis();
+      timing = true;
+    }
+    else
+    {
+      if (millis() - startMillis > 150000L)
+      {
+        if (channelSelected == 1)
+          channelSelected = 2;
+        else if (channelSelected == 2)
+          channelSelected = 1;
+          
+        timing = false;
+        i = 0;
+        j = 0;
+        GLCD.ClearScreen();
+      }
+    }
+      
     // an equation with a little noise
     y1[i] = 0.0 + 0.002 * random(-100,100);  // simulated noisy temperature
     ch1Setpoint[i]=0.0;
-    y2[i] = 0.0 + 0.004 * random(-100,100);  // simulated noisy temperature
-    ch1Setpoint[i]=0.0;
+    y2[i] = 0.5 + 0.004 * random(-100,100);  // simulated noisy temperature
+    ch2Setpoint[i]=0.5;
     
     // update the non-graph display values
-    printCurrent(1,y1[i],30,80 );
+    if (channelSelected == 1) 
+      printCurrent(1,y1[i],30,80 );
+    else
+      printCurrent(2,y1[i],30,80 );
 
     // the 106/107 is related to graphXMax-graphXMin
     if (i >= 106) 
     {
       for (j = 0; j < 107; j++)
       {
-        // erase old dots
-        eraseDot(j,y1[j]);
-        eraseDot(j,ch1Setpoint[j]);
+        if (channelSelected == 1)
+        {
+          // erase old dots
+          eraseDot(j,y1[j]);
+          eraseDot(j,ch1Setpoint[j]);
         
-        // move values down by one
-        y1[j] = y1[j+1];
+          // move values down by one
+          y1[j] = y1[j+1];
         
-        // redraw updated graph
-        drawDot(j,y1[j]);
-        drawDot(j,ch1Setpoint[j]);
+          // redraw updated graph
+          drawDot(j,y1[j]);
+          drawDot(j,ch1Setpoint[j]);
+        }
+        else
+        {
+          // erase old dots
+          eraseDot(j,y2[j]);
+          eraseDot(j,ch2Setpoint[j]);
+        
+          // move values down by one
+          y2[j] = y2[j+1];
+        
+          // redraw updated graph
+          drawDot(j,y2[j]);
+          drawDot(j,ch2Setpoint[j]);
+        }
       }
       // draw the new point
-      drawDot(i,y1[i]);
-      drawDot(i,ch1Setpoint[i]);
+      if (channelSelected == 1)
+      {
+        drawDot(i,y1[i]);
+        drawDot(i,ch1Setpoint[i]);
+      }
+      else
+      {
+        drawDot(i,y2[i]);
+        drawDot(i,ch2Setpoint[i]);
+      }
     }
     else
     {
       // this only executes until while the x values are less than graphXMax
-      drawDot(i,y1[i]);
-      drawDot(i,ch1Setpoint[i]);
+      if (channelSelected == 1)
+      {
+        drawDot(i,y1[i]);
+        drawDot(i,ch1Setpoint[i]);
+      }
+      else
+      {
+        drawDot(i,y2[i]);
+        drawDot(i,ch2Setpoint[i]);
+      }
       
       i++;
     }
     delay(1000);  // update time, in milliseconds
-  }   
  }
