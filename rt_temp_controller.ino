@@ -21,16 +21,18 @@ const int SCREEN_WIDTH = 128;    // KS0108 LCD max screen width x
 const int SCREEN_HEIGHT = 64;    // KS0108 LCD max screen height y
 
 /* global variables (thou art evil) */
-unsigned int x = 0;
+//unsigned int x = 0;
+unsigned int channelSelected = 1;
 
 int graphXMin = 20;  // the leftmost limit of the graph
 int graphXMax = SCREEN_WIDTH-1;  // the rightmost limit of the graph
 int graphYMin = 10;  // the top limit of the graph
 int graphYMax = SCREEN_HEIGHT-1;  // the bottom limit of the graph
-float ch1Setpoint[107];   // ch.1 temperature setpoint
-float ch2Setpoint = 0.5;  // ch.1 temperature setpoint
-float y1[107];       // this is the channel 1 y array
-                     // graphXMax - graphXMin
+float ch1Setpoint[107];    // ch.1 temperature setpoint
+float ch2Setpoint[107];    // ch.2 temperature setpoint
+float y1[107];             // this is the channel 1 y array
+float y2[107];             // graphXMax - graphXMin
+    
 void setup()  {
   GLCD.Init(NON_INVERTED);     // initialise the library, non inverted writes pixels onto a clear screen
   GLCD.ClearScreen();
@@ -43,7 +45,7 @@ void setup()  {
  * for plotting. Returns value between
  * graphXMin and graphXmax
  */
-int xToScreen(float x, int screenXMin, int screenXMax) {
+int xToScreen(int x, int screenXMin, int screenXMax) {
   //return (int(x * (screenXMax-screenXMin)/360.0 + screenXMin));
   if (x <= graphXMax)
   {
@@ -94,6 +96,16 @@ void printCurrent(int channel, float value, int setpoint, int output) {
   GLCD.PrintNumber(-1);
 }
 
+void eraseDot(int x, float y)
+{
+  GLCD.SetDot(xToScreen(x,graphXMin,graphXMax), yToScreen(y,graphYMin,graphYMax), WHITE);
+}
+
+void drawDot(int x, float y)
+{
+  GLCD.SetDot(xToScreen(x,graphXMin,graphXMax), yToScreen(y,graphYMin,graphYMax), BLACK);
+}
+
 void loop()
 {
   unsigned int i=0,j=0;
@@ -101,7 +113,9 @@ void loop()
   while (1)  
   {
     // an equation with a little noise
-    y1[i] = 0.0 + 0.002 * random(-100,100);  // argument degrees converted to radians
+    y1[i] = 0.0 + 0.002 * random(-100,100);  // simulated noisy temperature
+    ch1Setpoint[i]=0.0;
+    y2[i] = 0.0 + 0.004 * random(-100,100);  // simulated noisy temperature
     ch1Setpoint[i]=0.0;
     
     // update the non-graph display values
@@ -113,23 +127,26 @@ void loop()
       for (j = 0; j < 107; j++)
       {
         // erase old dots
-        GLCD.SetDot(xToScreen((float)j,graphXMin,graphXMax), yToScreen(y1[j],graphYMin,graphYMax), WHITE);
-        GLCD.SetDot(xToScreen((float)j,graphXMin,graphXMax), yToScreen(ch1Setpoint[j],graphYMin,graphYMax), WHITE);
+        eraseDot(j,y1[j]);
+        eraseDot(j,ch1Setpoint[j]);
+        
         // move values down by one
         y1[j] = y1[j+1];
+        
         // redraw updated graph
-        GLCD.SetDot(xToScreen((float)j,graphXMin,graphXMax), yToScreen(y1[j],graphYMin,graphYMax), BLACK);
-        GLCD.SetDot(xToScreen((float)j,graphXMin,graphXMax), yToScreen(ch1Setpoint[j],graphYMin,graphYMax), BLACK);
+        drawDot(j,y1[j]);
+        drawDot(j,ch1Setpoint[j]);
       }
       // draw the new point
-      GLCD.SetDot(xToScreen((float)i,graphXMin,graphXMax), yToScreen(y1[i],graphYMin,graphYMax), BLACK);
-      GLCD.SetDot(xToScreen((float)i,graphXMin,graphXMax), yToScreen(ch1Setpoint[i],graphYMin,graphYMax), BLACK);
+      drawDot(i,y1[i]);
+      drawDot(i,ch1Setpoint[i]);
     }
     else
     {
       // this only executes until while the x values are less than graphXMax
-      GLCD.SetDot(xToScreen((float)i,graphXMin,graphXMax), yToScreen(y1[i],graphYMin,graphYMax), BLACK);
-      GLCD.SetDot(xToScreen((float)i,graphXMin,graphXMax), yToScreen(ch1Setpoint[i],graphYMin,graphYMax), BLACK);
+      drawDot(i,y1[i]);
+      drawDot(i,ch1Setpoint[i]);
+      
       i++;
     }
     delay(1000);  // update time, in milliseconds
