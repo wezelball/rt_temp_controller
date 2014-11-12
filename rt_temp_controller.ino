@@ -11,9 +11,9 @@
 
 /* Includes */ 
 #include <glcd.h>
-#include "fonts/Arial14.h"         // proportional font
-#include "fonts/SystemFont5x7.h"   // system font
-#include "bitmaps/ArduinoIcon.h"   // bitmap
+#include "fonts/Arial14.h"        // proportional font
+#include "fonts/SystemFont5x7.h"  // system font
+#include "bitmaps/ArduinoIcon.h"  // bitmap
 
 /* constants (thou art not evil) */
 const float pi = 3.1416;          // good ole pi
@@ -85,13 +85,12 @@ void printCurrent(int channel, float value, int setpoint, int output) {
   GLCD.PrintNumber(channel);  // channel #
   GLCD.GotoXY(30,0);
   GLCD.print(value,1);        // temperature value
-  GLCD.GotoXY(65,0);
+  GLCD.GotoXY(60,0);
   GLCD.Puts("S: ");
-  GLCD.GotoXY(75,0);
+  GLCD.GotoXY(70,0);
   potRawInput = analogRead(A0);
-  GLCD.PrintNumber(potRawInput); //setpoint
-  //GLCD.PrintNumber(convertRawPot(potRawInput, 0, 10)); //setpoint
-  GLCD.GotoXY(95,0);
+  GLCD.print(convertRawPotValue(potRawInput, 0, 10),2); //setpoint
+  GLCD.GotoXY(96,0);
   GLCD.Puts("O: ");
   GLCD.GotoXY(110,0);
   GLCD.PrintNumber(output);   // PWM output
@@ -107,29 +106,33 @@ void printCurrent(int channel, float value, int setpoint, int output) {
   GLCD.PrintNumber(-1);
 }
 
+/* Erase dot on the screen by plottiing in background color */ 
 void eraseDot(int x, float y)
 {
   GLCD.SetDot(xToScreen(x,graphXMin,graphXMax), yToScreen(y,graphYMin,graphYMax), WHITE);
 }
 
+/* Plot dot on the screen */ 
 void drawDot(int x, float y)
 {
   GLCD.SetDot(xToScreen(x,graphXMin,graphXMax), yToScreen(y,graphYMin,graphYMax), BLACK);
 }
 
-//float convertRawPot(int value, float toMin, float toMax);
-//{
-//  float result;
+/* This is equivalent to the map() function, except floats are allowed */
+float convertRawPotValue(int value, float toMin, float toMax)
+{
+  float result;
   
-//  result = toMin + (value/1023)*(toMin/toMax);
-//  return result;
-//}
+  result = toMin + ((float)value/1023.0)*(toMax - toMin);
+  return result;
+}
 
 void loop()
 {
-  
+  /* Handle channel selection by flpping channel switch */
   if (digitalRead(ch1Switch) == HIGH)
     {
+      // This is true only when switching from opposite channel
       if (channelSelected != 1)
       {
         channelSelected = 1;
@@ -140,6 +143,7 @@ void loop()
     }
     if (digitalRead(ch2Switch) == HIGH)
     {
+      // This is true only when switching from opposite channel
       if (channelSelected != 2)
       {
         channelSelected = 2;
@@ -155,16 +159,17 @@ void loop()
     y2[i] = 0.5 + 0.004 * random(-100,100);  // simulated noisy temperature
     ch2Setpoint[i]=0.5;
     
-    // update the non-graph display values
+    // update the axis and graph header values
     if (channelSelected == 1) 
       printCurrent(1,y1[i],30,80 );
     else
       printCurrent(2,y1[i],30,80 );
 
-    // the 106/107 is related to graphXMax-graphXMin
-    if (i >= 106) 
+    // We are now plotting past end of graph, so 
+    // we need to scroll
+    if (i >= (graphXMax-graphXMin-1))
     {
-      for (j = 0; j < 107; j++)
+      for (j = 0; j < (graphXMax-graphXMin); j++)
       {
         if (channelSelected == 1)
         {
@@ -194,14 +199,14 @@ void loop()
         }
       }
       // draw the new point
-      if (channelSelected == 1)
+      if (channelSelected == 1)  // channel 1 plot
       {
         drawDot(i,y1[i]);
         drawDot(i,ch1Setpoint[i]);
       }
       else
       {
-        drawDot(i,y2[i]);
+        drawDot(i,y2[i]);        // channel 2 plot
         drawDot(i,ch2Setpoint[i]);
       }
     }
@@ -221,5 +226,5 @@ void loop()
       
       i++;
     }
-    delay(1000);  // update time, in milliseconds
+    delay(100);  // update time, in milliseconds
 }
