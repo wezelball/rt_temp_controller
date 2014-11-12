@@ -8,12 +8,12 @@
  * 0,0 is the upper left corner
  * 128, 64 is lower right corner
  */
- 
+
+/* Includes */ 
 #include <glcd.h>
 #include "fonts/Arial14.h"         // proportional font
 #include "fonts/SystemFont5x7.h"   // system font
 #include "bitmaps/ArduinoIcon.h"   // bitmap
-
 
 /* constants (thou art not evil) */
 const float pi = 3.1416;          // good ole pi
@@ -31,15 +31,23 @@ float ch1Setpoint[107];          // ch.1 temperature setpoint
 float ch2Setpoint[107];          // ch.2 temperature setpoint
 float y1[107];                   // this is the channel 1 y array
 float y2[107];                   // graphXMax - graphXMin
-unsigned long startMillis;       // for testing only
-boolean timing=false;            // for testing only
+
+/* Inputs/Outputs */
+int potRawInput = A0;
+int ch1Switch = A2;
+int ch2Switch = A1;
     
 void setup()  {
+  // GLCD
   GLCD.Init(NON_INVERTED);       // initialise the library, non inverted writes pixels onto a clear screen
   GLCD.ClearScreen();
   GLCD.DrawRect(graphXMin,graphYMin,(graphXMax-graphXMin),(graphYMax-graphYMin),BLACK);
   GLCD.SelectFont(System5x7);   // switch to fixed width system font
+  // Serial for debugging
   Serial.begin(9600);           // open the serial port for debugging
+  //  Physical I/O
+  pinMode(ch1Switch, INPUT_PULLUP);
+  pinMode(ch2Switch, INPUT_PULLUP);
 }
 
 /* Converts actual X value to screen coordinate
@@ -80,7 +88,9 @@ void printCurrent(int channel, float value, int setpoint, int output) {
   GLCD.GotoXY(65,0);
   GLCD.Puts("S: ");
   GLCD.GotoXY(75,0);
-  GLCD.PrintNumber(setpoint); //setpoint
+  potRawInput = analogRead(A0);
+  GLCD.PrintNumber(potRawInput); //setpoint
+  //GLCD.PrintNumber(convertRawPot(potRawInput, 0, 10)); //setpoint
   GLCD.GotoXY(95,0);
   GLCD.Puts("O: ");
   GLCD.GotoXY(110,0);
@@ -107,25 +117,32 @@ void drawDot(int x, float y)
   GLCD.SetDot(xToScreen(x,graphXMin,graphXMax), yToScreen(y,graphYMin,graphYMax), BLACK);
 }
 
+//float convertRawPot(int value, float toMin, float toMax);
+//{
+//  float result;
+  
+//  result = toMin + (value/1023)*(toMin/toMax);
+//  return result;
+//}
+
 void loop()
 {
-    // set up a timer for switching channels
-    // this is for testing only
-    if (!timing)
+  
+  if (digitalRead(ch1Switch) == HIGH)
     {
-      startMillis = millis();
-      timing = true;
-    }
-    else
-    {
-      if (millis() - startMillis > 150000L)
+      if (channelSelected != 1)
       {
-        if (channelSelected == 1)
-          channelSelected = 2;
-        else if (channelSelected == 2)
-          channelSelected = 1;
-          
-        timing = false;
+        channelSelected = 1;
+        i = 0;
+        j = 0;
+        GLCD.ClearScreen();
+      }  
+    }
+    if (digitalRead(ch2Switch) == HIGH)
+    {
+      if (channelSelected != 2)
+      {
+        channelSelected = 2;
         i = 0;
         j = 0;
         GLCD.ClearScreen();
@@ -205,4 +222,4 @@ void loop()
       i++;
     }
     delay(1000);  // update time, in milliseconds
- }
+}
