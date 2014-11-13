@@ -14,6 +14,7 @@
 #include "fonts/Arial14.h"        // proportional font
 #include "fonts/SystemFont5x7.h"  // system font
 #include "bitmaps/ArduinoIcon.h"  // bitmap
+#include "procedures.c"           // my procedures
 
 /* constants (thou art not evil) */
 const float pi = 3.1416;          // good ole pi
@@ -118,15 +119,6 @@ void eraseDot(int x, float y)
 void drawDot(int x, float y)
 {
   GLCD.SetDot(xToScreen(x,LCDXMin,LCDXMax), yToScreen(y,LCDYMin,LCDYMax), BLACK);
-}
-
-/* This is equivalent to the map() function, except floats are allowed */
-float convertRawPotValue(int value, float toMin, float toMax)
-{
-  float result;
-  
-  result = toMin + ((float)value/1023.0)*(toMax - toMin);
-  return result;
 }
 
 void loop()
