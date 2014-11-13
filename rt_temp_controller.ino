@@ -23,14 +23,16 @@ const int SCREEN_HEIGHT = 64;     // KS0108 LCD max screen height y
 /* global variables (thou art evil) */
 unsigned int channelSelected = 1;// can display 2 channels
 unsigned int i=0,j=0;            // loop counter variables
-int graphXMin = 20;              // the leftmost limit of the graph
-int graphXMax = SCREEN_WIDTH-1;  // the rightmost limit of the graph
-int graphYMin = 10;              // the top limit of the graph
-int graphYMax = SCREEN_HEIGHT-1; // the bottom limit of the graph
+
+/* The LCD coordinates are the limits of the plotting area */
+int LCDXMin = 20;              // the leftmost limit of the graph, in LCD coordinates
+int LCDXMax = SCREEN_WIDTH-1;  // the rightmost limit of the graph, in LCD coordinates
+int LCDYMin = 10;              // the top limit of the graph, in LCD coordinates
+int LCDYMax = SCREEN_HEIGHT-1; // the bottom limit of the graph, in LCD coordinates
 float ch1Setpoint[107];          // ch.1 temperature setpoint
 float ch2Setpoint[107];          // ch.2 temperature setpoint
 float y1[107];                   // this is the channel 1 y array
-float y2[107];                   // graphXMax - graphXMin
+float y2[107];                   // LCDXMax - LCDXMin
 
 /* Inputs/Outputs */
 int potRawInput = A0;
@@ -41,7 +43,7 @@ void setup()  {
   // GLCD
   GLCD.Init(NON_INVERTED);       // initialise the library, non inverted writes pixels onto a clear screen
   GLCD.ClearScreen();
-  GLCD.DrawRect(graphXMin,graphYMin,(graphXMax-graphXMin),(graphYMax-graphYMin),BLACK);
+  GLCD.DrawRect(LCDXMin,LCDYMin,(LCDXMax-LCDXMin),(LCDYMax-LCDYMin),BLACK);
   GLCD.SelectFont(System5x7);   // switch to fixed width system font
   // Serial for debugging
   Serial.begin(9600);           // open the serial port for debugging
@@ -52,23 +54,23 @@ void setup()  {
 
 /* Converts actual X value to screen coordinate
  * for plotting. Returns value between
- * graphXMin and graphXmax
+ * LCDXMin and LCDXMax
  */
 int xToScreen(int x, int screenXMin, int screenXMax) {
   //return (int(x * (screenXMax-screenXMin)/360.0 + screenXMin));
-  if (x <= graphXMax)
+  if (x <= LCDXMax)
   {
     return (int(x + screenXMin));
   }
   else
   {
-    return (int (graphXMax));
+    return (int (LCDXMax));
   }
 }
 
 /* Converts actual Y value to screen coordinate
  * for plotting. Returns value between
- * graphYMin and graphYMax
+ * LCDYMin and LCDYMax
  */
 int yToScreen(float y, int screenYMin, int screenYMax) {
   return(int(screenYMin + (screenYMax-screenYMin)/2 - y*(screenYMax-screenYMin)/2));
@@ -95,27 +97,27 @@ void printCurrent(int channel, float value, int setpoint, int output) {
   GLCD.GotoXY(110,0);
   GLCD.PrintNumber(output);   // PWM output
   // redraw rectangle
-  GLCD.DrawRect(graphXMin,graphYMin,(graphXMax-graphXMin),(graphYMax-graphYMin),BLACK);
+  GLCD.DrawRect(LCDXMin,LCDYMin,(LCDXMax-LCDXMin),(LCDYMax-LCDYMin),BLACK);
   
   // print the vertical axis numbers
-  GLCD.GotoXY(4,graphYMin);
+  GLCD.GotoXY(4,LCDYMin);
   GLCD.PrintNumber(1);
-  GLCD.GotoXY(4,graphYMin -2 + (graphYMax-graphYMin)/2);
+  GLCD.GotoXY(4,LCDYMin -2 + (LCDYMax-LCDYMin)/2);
   GLCD.PrintNumber(0);
-  GLCD.GotoXY(4,graphYMax-8);
+  GLCD.GotoXY(4,LCDYMax-8);
   GLCD.PrintNumber(-1);
 }
 
 /* Erase dot on the screen by plottiing in background color */ 
 void eraseDot(int x, float y)
 {
-  GLCD.SetDot(xToScreen(x,graphXMin,graphXMax), yToScreen(y,graphYMin,graphYMax), WHITE);
+  GLCD.SetDot(xToScreen(x,LCDXMin,LCDXMax), yToScreen(y,LCDYMin,LCDYMax), WHITE);
 }
 
 /* Plot dot on the screen */ 
 void drawDot(int x, float y)
 {
-  GLCD.SetDot(xToScreen(x,graphXMin,graphXMax), yToScreen(y,graphYMin,graphYMax), BLACK);
+  GLCD.SetDot(xToScreen(x,LCDXMin,LCDXMax), yToScreen(y,LCDYMin,LCDYMax), BLACK);
 }
 
 /* This is equivalent to the map() function, except floats are allowed */
@@ -167,9 +169,9 @@ void loop()
 
     // We are now plotting past end of graph, so 
     // we need to scroll
-    if (i >= (graphXMax-graphXMin-1))
+    if (i >= (LCDXMax-LCDXMin-1))
     {
-      for (j = 0; j < (graphXMax-graphXMin); j++)
+      for (j = 0; j < (LCDXMax-LCDXMin); j++)
       {
         if (channelSelected == 1)
         {
@@ -212,7 +214,7 @@ void loop()
     }
     else
     {
-      // this only executes until while the x values are less than graphXMax
+      // this only executes until while the x values are less than LCDXMax
       if (channelSelected == 1)
       {
         drawDot(i,y1[i]);
