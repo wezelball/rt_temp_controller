@@ -26,10 +26,17 @@ unsigned int channelSelected = 1;// can display 2 channels
 unsigned int i=0,j=0;            // loop counter variables
 
 /* The LCD coordinates are the limits of the plotting area */
-int LCDXMin = 20;              // the leftmost limit of the graph, in LCD coordinates
+int LCDXMin = 25;              // the leftmost limit of the graph, in LCD coordinates
 int LCDXMax = SCREEN_WIDTH-1;  // the rightmost limit of the graph, in LCD coordinates
 int LCDYMin = 10;              // the top limit of the graph, in LCD coordinates
 int LCDYMax = SCREEN_HEIGHT-1; // the bottom limit of the graph, in LCD coordinates
+
+/* The limits of the y actual data */
+float y1Min = -1.0;
+float y1Max = 1.0;
+float y2Min = 0.0;
+float y2Max = 10.0;
+
 float ch1Setpoint[107];          // ch.1 temperature setpoint
 float ch2Setpoint[107];          // ch.2 temperature setpoint
 float y1[107];                   // this is the channel 1 y array
@@ -73,8 +80,11 @@ int xToScreen(int x, int screenXMin, int screenXMax) {
  * for plotting. Returns value between
  * LCDYMin and LCDYMax
  */
-int yToScreen(float y, int screenYMin, int screenYMax) {
-  return(int(screenYMin + (screenYMax-screenYMin)/2 - y*(screenYMax-screenYMin)/2));
+int yToScreen(float y, int screenYMin, int screenYMax, float yMin, float yMax) {
+  int screenY;
+  
+  screenY = screenYMax + ((y - yMin) * (screenYMin - screenYMax))/(yMax - yMin);
+  return screenY;
 }
 
 /*
@@ -101,24 +111,36 @@ void printCurrent(int channel, float value, int setpoint, int output) {
   GLCD.DrawRect(LCDXMin,LCDYMin,(LCDXMax-LCDXMin),(LCDYMax-LCDYMin),BLACK);
   
   // print the vertical axis numbers
-  GLCD.GotoXY(4,LCDYMin);
-  GLCD.PrintNumber(1);
-  GLCD.GotoXY(4,LCDYMin -2 + (LCDYMax-LCDYMin)/2);
-  GLCD.PrintNumber(0);
-  GLCD.GotoXY(4,LCDYMax-8);
-  GLCD.PrintNumber(-1);
+  if (channel == 1)
+  {
+    GLCD.GotoXY(1,LCDYMin);
+    GLCD.print(y1Max,1);
+    GLCD.GotoXY(1,LCDYMin -4 + (LCDYMax-LCDYMin)/2);
+    GLCD.print(y1Min+(y1Max-y1Min)/2,1);
+    GLCD.GotoXY(1,LCDYMax-8);
+    GLCD.print(y1Min,1);
+  }
+  else
+  {
+    GLCD.GotoXY(1,LCDYMin);
+    GLCD.print(y2Max,1);
+    GLCD.GotoXY(1,LCDYMin -4 + (LCDYMax-LCDYMin)/2);
+    GLCD.print(y2Min+(y2Max-y2Min)/2,1);
+    GLCD.GotoXY(1,LCDYMax-8);
+    GLCD.print(y2Min,1);
+  }
 }
 
 /* Erase dot on the screen by plottiing in background color */ 
-void eraseDot(int x, float y)
+void eraseDot(int x, float y, float yMin, float yMax)
 {
-  GLCD.SetDot(xToScreen(x,LCDXMin,LCDXMax), yToScreen(y,LCDYMin,LCDYMax), WHITE);
+  GLCD.SetDot(xToScreen(x,LCDXMin,LCDXMax), yToScreen(y,LCDYMin,LCDYMax,yMin,yMax), WHITE);
 }
 
 /* Plot dot on the screen */ 
-void drawDot(int x, float y)
+void drawDot(int x, float y, float yMin, float yMax)
 {
-  GLCD.SetDot(xToScreen(x,LCDXMin,LCDXMax), yToScreen(y,LCDYMin,LCDYMax), BLACK);
+  GLCD.SetDot(xToScreen(x,LCDXMin,LCDXMax), yToScreen(y,LCDYMin,LCDYMax,yMin,yMax), BLACK);
 }
 
 void loop()
@@ -168,40 +190,40 @@ void loop()
         if (channelSelected == 1)
         {
           // erase old dots
-          eraseDot(j,y1[j]);
-          eraseDot(j,ch1Setpoint[j]);
+          eraseDot(j,y1[j],y1Min,y1Max);
+          eraseDot(j,ch1Setpoint[j],y1Min,y1Max);
         
           // move values down by one
           y1[j] = y1[j+1];
         
           // redraw updated graph
-          drawDot(j,y1[j]);
-          drawDot(j,ch1Setpoint[j]);
+          drawDot(j,y1[j],y1Min,y1Max);
+          drawDot(j,ch1Setpoint[j],y1Min,y1Max);
         }
         else
         {
           // erase old dots
-          eraseDot(j,y2[j]);
-          eraseDot(j,ch2Setpoint[j]);
+          eraseDot(j,y2[j],y2Min,y2Max);
+          eraseDot(j,ch2Setpoint[j],y2Min,y2Max);
         
           // move values down by one
           y2[j] = y2[j+1];
         
           // redraw updated graph
-          drawDot(j,y2[j]);
-          drawDot(j,ch2Setpoint[j]);
+          drawDot(j,y2[j],y2Min,y2Max);
+          drawDot(j,ch2Setpoint[j],y2Min,y2Max);
         }
       }
       // draw the new point
       if (channelSelected == 1)  // channel 1 plot
       {
-        drawDot(i,y1[i]);
-        drawDot(i,ch1Setpoint[i]);
+        drawDot(i,y1[i],y1Min,y1Max);
+        drawDot(i,ch1Setpoint[i],y1Min,y1Max);
       }
       else
       {
-        drawDot(i,y2[i]);        // channel 2 plot
-        drawDot(i,ch2Setpoint[i]);
+        drawDot(i,y2[i],y2Min,y2Max);        // channel 2 plot
+        drawDot(i,ch2Setpoint[i],y2Min,y2Max);
       }
     }
     else
@@ -209,13 +231,13 @@ void loop()
       // this only executes until while the x values are less than LCDXMax
       if (channelSelected == 1)
       {
-        drawDot(i,y1[i]);
-        drawDot(i,ch1Setpoint[i]);
+        drawDot(i,y1[i],y1Min,y1Max);
+        drawDot(i,ch1Setpoint[i],y1Min,y1Max);
       }
       else
       {
-        drawDot(i,y2[i]);
-        drawDot(i,ch2Setpoint[i]);
+        drawDot(i,y2[i],y2Min,y2Max);
+        drawDot(i,ch2Setpoint[i],y2Min,y2Max);
       }
       
       i++;
