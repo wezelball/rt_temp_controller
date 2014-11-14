@@ -32,10 +32,20 @@ int LCDYMin = 10;              // the top limit of the graph, in LCD coordinates
 int LCDYMax = SCREEN_HEIGHT-1; // the bottom limit of the graph, in LCD coordinates
 
 /* The limits of the y actual data */
-float y1Min = -1.0;
-float y1Max = 1.0;
-float y2Min = 0.0;
-float y2Max = 10.0;
+//float y1Min = -1.0;
+float y1Min;
+//float y1Max = 1.0;
+float y1Max;
+//float y2Min = 0.0;
+float y2Min;
+//float y2Max = 10.0;
+float y2Max;
+
+/* The plot center and window values */
+float y1Center = 20;
+float y1Window = 10;
+float y2Center = 30;
+float y2Window = 5;
 
 float ch1Setpoint[107];          // ch.1 temperature setpoint
 float ch2Setpoint[107];          // ch.2 temperature setpoint
@@ -58,6 +68,12 @@ void setup()  {
   //  Physical I/O
   pinMode(ch1Switch, INPUT_PULLUP);
   pinMode(ch2Switch, INPUT_PULLUP);
+  
+  // setup the initial y min and max plot ranges
+  y1Min = y1Center - y1Window/2;
+  y1Max = y1Center + y1Window/2;
+  y2Min = y2Center - y2Window/2;
+  y2Max = y2Center + y2Window/2;
 }
 
 /* Converts actual X value to screen coordinate
@@ -168,11 +184,12 @@ void loop()
         GLCD.ClearScreen();
       }
     }
+
       
     // an equation with a little noise
-    y1[i] = 0.0 + 0.002 * random(-100,100);  // simulated noisy temperature
+    y1[i] = 21.0 + 0.002 * random(-100,100);  // simulated noisy temperature
     ch1Setpoint[i]=0.0;
-    y2[i] = 0.5 + 0.004 * random(-100,100);  // simulated noisy temperature
+    y2[i] = 32.0 + 0.004 * random(-100,100);  // simulated noisy temperature
     ch2Setpoint[i]=0.5;
     
     // update the axis and graph header values
