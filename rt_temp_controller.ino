@@ -32,13 +32,9 @@ int LCDYMin = 10;              // the top limit of the graph, in LCD coordinates
 int LCDYMax = SCREEN_HEIGHT-1; // the bottom limit of the graph, in LCD coordinates
 
 /* The limits of the y actual data */
-//float y1Min = -1.0;
 float y1Min;
-//float y1Max = 1.0;
 float y1Max;
-//float y2Min = 0.0;
 float y2Min;
-//float y2Max = 10.0;
 float y2Max;
 
 /* The plot center and window values */
@@ -171,6 +167,13 @@ void loop()
         i = 0;
         j = 0;
         GLCD.ClearScreen();
+      }
+      else  // allow temperature window adjustment with the pot
+      {
+        y1Center = convertRawPotValue(analogRead(A0), 0, 40);
+        y1Min = y1Center - y1Window/2;
+        y1Max = y1Center + y1Window/2;
+        GLCD.ClearScreen();
       }  
     }
     if (digitalRead(ch2Switch) == HIGH)
@@ -181,6 +184,13 @@ void loop()
         channelSelected = 2;
         i = 0;
         j = 0;
+        GLCD.ClearScreen();
+      }
+      else  // allow temperature window adjustment with the pot
+      {
+        y2Center = convertRawPotValue(analogRead(A0), 0, 40);
+        y2Min = y2Center - y2Window/2;
+        y2Max = y2Center + y2Window/2;
         GLCD.ClearScreen();
       }
     }
