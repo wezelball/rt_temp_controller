@@ -39,11 +39,21 @@ float y2Max;
 
 /* The plot center and window values */
 float y1Center = 20;
+float y1OldCenter = 20;
 float y1Window = 10;
 float y2Center = 30;
+float y2OldCenter = 30;
 float y2Window = 5;
-int startingPotValCh1;
-int startingPotValCh2;
+
+/* 
+ * These values are added to or subtracted from the center value
+ * for that channel
+ */
+int ch1Offset;
+int ch2Offset;
+
+/* Need to know when switch first thrown to position */
+int lastSwitchState;
 
 float ch1Setpoint[107];          // ch.1 temperature setpoint
 float ch2Setpoint[107];          // ch.2 temperature setpoint
@@ -54,27 +64,32 @@ float y2[107];                   // LCDXMax - LCDXMin
 int potRawInput = A0;
 int ch1Switch = A2;
 int ch2Switch = A1;
-
-int ch1LastSwitchState = 0;
-int ch2LastSwitchState = 0;
     
 void setup()  {
-  // GLCD
-  GLCD.Init(NON_INVERTED);       // initialise the library, non inverted writes pixels onto a clear screen
-  GLCD.ClearScreen();
-  GLCD.DrawRect(LCDXMin,LCDYMin,(LCDXMax-LCDXMin),(LCDYMax-LCDYMin),BLACK);
-  GLCD.SelectFont(System5x7);   // switch to fixed width system font
-  // Serial for debugging
-  Serial.begin(9600);           // open the serial port for debugging
-  //  Physical I/O
-  pinMode(ch1Switch, INPUT_PULLUP);
-  pinMode(ch2Switch, INPUT_PULLUP);
+	// GLCD
+	GLCD.Init(NON_INVERTED);       // initialise the library, non inverted writes pixels onto a clear screen
+	GLCD.ClearScreen();
+	GLCD.DrawRect(LCDXMin,LCDYMin,(LCDXMax-LCDXMin),(LCDYMax-LCDYMin),BLACK);
+	GLCD.SelectFont(System5x7);   // switch to fixed width system font
+	// Serial for debugging
+	Serial.begin(9600);           // open the serial port for debugging
+	//  Physical I/O
+	pinMode(ch1Switch, INPUT_PULLUP);
+	pinMode(ch2Switch, INPUT_PULLUP);
   
-  // setup the initial y min and max plot ranges
-  y1Min = y1Center - y1Window/2;
-  y1Max = y1Center + y1Window/2;
-  y2Min = y2Center - y2Window/2;
-  y2Max = y2Center + y2Window/2;
+	// setup the initial y min and max plot ranges
+	y1Min = y1Center - y1Window/2;
+	y1Max = y1Center + y1Window/2;
+	y2Min = y2Center - y2Window/2;
+	y2Max = y2Center + y2Window/2;
+  
+	// determine the initial switch value
+	if (digitalRead(ch1Switch) == HIGH)
+		lastSwitchState = 1;
+	else if (digitalRead(ch2Switch) == HIGH)
+		lastSwitchState = 2;
+	else
+		lastSwitchState = 0;  
 }
 
 /* Converts actual X value to screen coordinate
@@ -166,123 +181,141 @@ void drawDot(int x, float y, float yMin, float yMax)
 
 void loop()
 {
-  
-  /* Handle channel selection by flpping channel switch */
-  if (digitalRead(ch1Switch) == HIGH)
-    {
-      // This is true only when switching from opposite channel
+	/* Handle channel selection by flpping channel switch */
+	if (digitalRead(ch1Switch) == HIGH)
+	{
+		// This is true only when switching from opposite channel
       if (channelSelected != 1)
       {
         channelSelected = 1;
         i = 0;
         j = 0;
         GLCD.ClearScreen();
+        /* Set the offet value so display does not jump */
+        ch1Offset = convertRawPotValue(analogRead(A0), 0, 40);
       }
+      // True if switching from any other switch position
+      // like a rising-edge detector
+      if (lastSwitchState != 1)
+      {
+			lastSwitchState = 1;
+			ch1Offset = convertRawPotValue(analogRead(A0), 0, 40);
+		}
       else  // allow temperature window adjustment with the pot
       {
-        y1Center = convertRawPotValue(analogRead(A0), 0, 40);
-        startingPotValCh1 = y1Center;
+        y1Center = y1OldCenter + (convertRawPotValue(analogRead(A0), 0, 40) - ch1Offset); 
         y1Min = y1Center - y1Window/2;
         y1Max = y1Center + y1Window/2;
         GLCD.ClearScreen();
       }  
     }
-    if (digitalRead(ch2Switch) == HIGH)
-    {
-      // This is true only when switching from opposite channel
+
+	if (digitalRead(ch2Switch) == HIGH)
+   {
+		// This is true only when switching from opposite channel
       if (channelSelected != 2)
       {
         channelSelected = 2;
         i = 0;
         j = 0;
         GLCD.ClearScreen();
+        /* Set the offet value so display does not jump */
+        ch2Offset = convertRawPotValue(analogRead(A0), 0, 40);
       }
+      // True if switching from any other switch position
+      // like a rising-edge detector
+      if (lastSwitchState != 2)
+      {
+			lastSwitchState = 2;
+			ch2Offset = convertRawPotValue(analogRead(A0), 0, 40);
+		}
       else  // allow temperature window adjustment with the pot
       {
-        y2Center = convertRawPotValue(analogRead(A0), 0, 40);
-        y2Min = y2Center - y2Window/2;
-        y2Max = y2Center + y2Window/2;
-        GLCD.ClearScreen();
+			y2Center = y2OldCenter + (convertRawPotValue(analogRead(A0), 0, 40) - ch2Offset); 
+			y2Center = convertRawPotValue(analogRead(A0), 0, 40);
+			y2Min = y2Center - y2Window/2;
+			y2Max = y2Center + y2Window/2;
+			GLCD.ClearScreen();
       }
     }
-  // Store the last switch state
-  if (digitalRead(ch1Switch) == LOW)
-    ch1LastSwitchState = 0;  
-  if (digitalRead(ch2Switch) == LOW)
-    ch2LastSwitchState = 0;
-      
-    // an equation with a little noise
-    y1[i] = 21.0 + 0.002 * random(-100,100);  // simulated noisy temperature
-    ch1Setpoint[i]=21.0;
-    y2[i] = 32.0 + 0.004 * random(-100,100);  // simulated noisy temperature
-    ch2Setpoint[i]=32.0;
     
-    // update the axis and graph header values
-    if (channelSelected == 1) 
-      printCurrent(1,y1[i],30,80 );
-    else
-      printCurrent(2,y1[i],30,80 );
+	// Update last switch state if switch in center position
+	if (digitalRead(ch1Switch) == LOW && digitalRead(ch2Switch) == LOW)
+		lastSwitchState = 0;  
+      
+	// an equation with a little noise
+   y1[i] = 21.0 + 0.002 * random(-100,100);  // simulated noisy temperature
+   ch1Setpoint[i]=21.0;
+   y2[i] = 32.0 + 0.004 * random(-100,100);  // simulated noisy temperature
+   ch2Setpoint[i]=32.0;
+    
+   // update the axis and graph header values
+   if (channelSelected == 1) 
+     printCurrent(1,y1[i],30,80 );
+   else
+     printCurrent(2,y2[i],30,80 );
 
-    // We are now plotting past end of graph, so 
-    // we need to scroll
-    if (i >= (LCDXMax-LCDXMin-1))
-    {
-      for (j = 0; j < (LCDXMax-LCDXMin); j++)
-      {
-        if (channelSelected == 1)
-        {
-          // erase old dots
-          eraseDot(j,y1[j],y1Min,y1Max);
-          eraseDot(j,ch1Setpoint[j],y1Min,y1Max);
+   // We are now plotting past end of graph, so 
+   // we need to scroll
+   if (i >= (LCDXMax-LCDXMin-1))
+   {
+     for (j = 0; j < (LCDXMax-LCDXMin); j++)
+     {
+       if (channelSelected == 1)
+       {
+         // erase old dots
+         eraseDot(j,y1[j],y1Min,y1Max);
+         eraseDot(j,ch1Setpoint[j],y1Min,y1Max);
         
-          // move values down by one
-          y1[j] = y1[j+1];
+         // move values down by one
+         y1[j] = y1[j+1];
         
-          // redraw updated graph
-          drawDot(j,y1[j],y1Min,y1Max);
-          drawDot(j,ch1Setpoint[j],y1Min,y1Max);
-        }
-        else
-        {
-          // erase old dots
-          eraseDot(j,y2[j],y2Min,y2Max);
-          eraseDot(j,ch2Setpoint[j],y2Min,y2Max);
+         // redraw updated graph
+         drawDot(j,y1[j],y1Min,y1Max);
+         drawDot(j,ch1Setpoint[j],y1Min,y1Max);
+       }
+       else
+       {
+         // erase old dots
+         eraseDot(j,y2[j],y2Min,y2Max);
+         eraseDot(j,ch2Setpoint[j],y2Min,y2Max);
         
-          // move values down by one
-          y2[j] = y2[j+1];
+         // move values down by one
+         y2[j] = y2[j+1];
         
-          // redraw updated graph
-          drawDot(j,y2[j],y2Min,y2Max);
-          drawDot(j,ch2Setpoint[j],y2Min,y2Max);
-        }
-      }
-      // draw the new point
-      if (channelSelected == 1)  // channel 1 plot
-      {
-        drawDot(i,y1[i],y1Min,y1Max);
-        drawDot(i,ch1Setpoint[i],y1Min,y1Max);
-      }
-      else
-      {
-        drawDot(i,y2[i],y2Min,y2Max);        // channel 2 plot
-        drawDot(i,ch2Setpoint[i],y2Min,y2Max);
-      }
-    }
-    else
-    {
-      // this only executes until while the x values are less than LCDXMax
+         // redraw updated graph
+         drawDot(j,y2[j],y2Min,y2Max);
+         drawDot(j,ch2Setpoint[j],y2Min,y2Max);
+       }
+     }
+      
+     // draw the new point
+     if (channelSelected == 1)  // channel 1 plot
+     {
+       drawDot(i,y1[i],y1Min,y1Max);
+       drawDot(i,ch1Setpoint[i],y1Min,y1Max);
+     }
+     else
+     {
+       drawDot(i,y2[i],y2Min,y2Max);        // channel 2 plot
+       drawDot(i,ch2Setpoint[i],y2Min,y2Max);
+     }
+   }
+   else
+   {
+		// this only executes until while the x values are less than LCDXMax
       if (channelSelected == 1)
       {
-        drawDot(i,y1[i],y1Min,y1Max);
-        drawDot(i,ch1Setpoint[i],y1Min,y1Max);
+			drawDot(i,y1[i],y1Min,y1Max);
+			drawDot(i,ch1Setpoint[i],y1Min,y1Max);
       }
       else
       {
-        drawDot(i,y2[i],y2Min,y2Max);
-        drawDot(i,ch2Setpoint[i],y2Min,y2Max);
+			drawDot(i,y2[i],y2Min,y2Max);
+			drawDot(i,ch2Setpoint[i],y2Min,y2Max);
       }
       
       i++;
-    }
-    delay(100);  // update time, in milliseconds
+   }
+	delay(100);  // update time, in milliseconds
 }

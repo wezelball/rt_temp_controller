@@ -19,3 +19,12 @@ it to the channel.
 
 I need to read the current pot value and assign it to the current
 window value, and djust from there.
+
+11/26/14
+The jumping display bug is now mostly fixed, and I'm using Geany as an
+editor, which is far better. Still working on indentation issues.
+
+There are some other bugs that I want to squash before refactoring.
+
+Also note that the pot should adjust the setpoint as well as moving the
+window to center the setpoint in it.
