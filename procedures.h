@@ -1,3 +1,5 @@
 // function prototypes
 float convertRawPotValue(int, float, float);
-//void printCurrent(int, float, int, int);
+int xToScreen(int, int, int);
+int yToScreen(float, int, int, float, float);
+

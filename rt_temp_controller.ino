@@ -52,7 +52,11 @@ float y2Window = 5;
 int ch1Offset;
 int ch2Offset;
 
-/* Need to know when switch first thrown to position */
+/* Need to know when switch first thrown to position 
+ * 
+ * variable assumes value of 0, 1, or 2 based on last switch position
+ * 
+ */
 int lastSwitchState;
 
 float ch1Setpoint[107];          // ch.1 temperature setpoint
@@ -62,8 +66,8 @@ float y2[107];                   // LCDXMax - LCDXMin
 
 /* Inputs/Outputs */
 int potRawInput = A0;
-int ch1Switch = A2;
-int ch2Switch = A1;
+int ch1Switch = 	A2;
+int ch2Switch = 	A1;
     
 void setup()  {
 	// GLCD
@@ -71,8 +75,10 @@ void setup()  {
 	GLCD.ClearScreen();
 	GLCD.DrawRect(LCDXMin,LCDYMin,(LCDXMax-LCDXMin),(LCDYMax-LCDYMin),BLACK);
 	GLCD.SelectFont(System5x7);   // switch to fixed width system font
+
 	// Serial for debugging
 	Serial.begin(9600);           // open the serial port for debugging
+
 	//  Physical I/O
 	pinMode(ch1Switch, INPUT_PULLUP);
 	pinMode(ch2Switch, INPUT_PULLUP);
@@ -90,37 +96,6 @@ void setup()  {
 		lastSwitchState = 2;
 	else
 		lastSwitchState = 0;  
-}
-
-/* Converts actual X value to screen coordinate
- * for plotting. Returns value between
- * LCDXMin and LCDXMax
- */
-int xToScreen(int x, int screenXMin, int screenXMax) {
-  //return (int(x * (screenXMax-screenXMin)/360.0 + screenXMin));
-  if (x <= LCDXMax)
-  {
-    return (int(x + screenXMin));
-  }
-  else
-  {
-    return (int (LCDXMax));
-  }
-}
-
-/* Converts actual Y value to screen coordinate
- * for plotting. Returns value between
- * LCDYMin and LCDYMax
- */
-int yToScreen(float y, int screenYMin, int screenYMax, float yMin, float yMax) {
-  int screenY;
-  
-  screenY = screenYMax + ((y - yMin) * (screenYMin - screenYMax))/(yMax - yMin);
-  
-  //if (screenY > yMax)
-  //  screenY = yMax;
-    
-  return screenY;
 }
 
 /*
