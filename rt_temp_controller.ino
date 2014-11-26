@@ -42,6 +42,8 @@ float y1Center = 20;
 float y1Window = 10;
 float y2Center = 30;
 float y2Window = 5;
+int startingPotValCh1;
+int startingPotValCh2;
 
 float ch1Setpoint[107];          // ch.1 temperature setpoint
 float ch2Setpoint[107];          // ch.2 temperature setpoint
@@ -52,6 +54,9 @@ float y2[107];                   // LCDXMax - LCDXMin
 int potRawInput = A0;
 int ch1Switch = A2;
 int ch2Switch = A1;
+
+int ch1LastSwitchState = 0;
+int ch2LastSwitchState = 0;
     
 void setup()  {
   // GLCD
@@ -96,6 +101,10 @@ int yToScreen(float y, int screenYMin, int screenYMax, float yMin, float yMax) {
   int screenY;
   
   screenY = screenYMax + ((y - yMin) * (screenYMin - screenYMax))/(yMax - yMin);
+  
+  //if (screenY > yMax)
+  //  screenY = yMax;
+    
   return screenY;
 }
 
@@ -157,6 +166,7 @@ void drawDot(int x, float y, float yMin, float yMax)
 
 void loop()
 {
+  
   /* Handle channel selection by flpping channel switch */
   if (digitalRead(ch1Switch) == HIGH)
     {
@@ -171,6 +181,7 @@ void loop()
       else  // allow temperature window adjustment with the pot
       {
         y1Center = convertRawPotValue(analogRead(A0), 0, 40);
+        startingPotValCh1 = y1Center;
         y1Min = y1Center - y1Window/2;
         y1Max = y1Center + y1Window/2;
         GLCD.ClearScreen();
@@ -194,13 +205,17 @@ void loop()
         GLCD.ClearScreen();
       }
     }
-
+  // Store the last switch state
+  if (digitalRead(ch1Switch) == LOW)
+    ch1LastSwitchState = 0;  
+  if (digitalRead(ch2Switch) == LOW)
+    ch2LastSwitchState = 0;
       
     // an equation with a little noise
     y1[i] = 21.0 + 0.002 * random(-100,100);  // simulated noisy temperature
-    ch1Setpoint[i]=0.0;
+    ch1Setpoint[i]=21.0;
     y2[i] = 32.0 + 0.004 * random(-100,100);  // simulated noisy temperature
-    ch2Setpoint[i]=0.5;
+    ch2Setpoint[i]=32.0;
     
     // update the axis and graph header values
     if (channelSelected == 1) 
