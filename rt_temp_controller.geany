@@ -24,7 +24,10 @@ long_line_column=72
 
 [files]
 current_page=0
-FILE_NAME_0=8047;C;0;EUTF-8;1;1;0;%2Fhome%2Fdcohen%2Fsketchbook%2Frt_temp_controller%2Frt_temp_controller.ino;0;3
-FILE_NAME_1=528;C;0;EUTF-8;1;1;0;%2Fhome%2Fdcohen%2Fsketchbook%2Frt_temp_controller%2Fprocedures.c;0;4
-FILE_NAME_2=143;C;0;EUTF-8;1;1;0;%2Fhome%2Fdcohen%2Fsketchbook%2Frt_temp_controller%2Fprocedures.h;0;4
-FILE_NAME_3=18;Markdown;0;EUTF-8;1;1;0;%2Fhome%2Fdcohen%2Fsketchbook%2Frt_temp_controller%2FREADME.md;0;4
+FILE_NAME_0=0;C;0;16;1;1;0;%2Fusr%2Flocal%2Fsrc%2Frt_temp_controller%2Fprocedures.c;0;3
+FILE_NAME_1=0;C;0;16;1;1;0;%2Fusr%2Flocal%2Fsrc%2Frt_temp_controller%2Fprocedures.h;0;3
+FILE_NAME_2=0;None;0;16;1;1;0;%2Fusr%2Flocal%2Fsrc%2Frt_temp_controller%2Frt_temp_controller.ino;0;3
+FILE_NAME_3=0;Markdown;0;16;1;1;0;%2Fusr%2Flocal%2Fsrc%2Frt_temp_controller%2FREADME.md;0;3
+
+[VTE]
+last_dir=/home/pi

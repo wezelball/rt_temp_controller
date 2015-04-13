@@ -10,11 +10,21 @@
  */
 
 /* Includes */ 
-#include <glcd.h>
+// OpenGLCD
+#include <openGLCD_Config.h>
+#include <openGLCD_Buildinfo.h>
+#include <openGLCD.h>
 #include "fonts/Arial14.h"        // proportional font
 #include "fonts/SystemFont5x7.h"  // system font
 #include "bitmaps/ArduinoIcon.h"  // bitmap
+// Dallas 1-wire
+#include <OneWire.h>
+// PID library
+#include <PID_v1.h>
+
+// My procedures
 #include "procedures.c"           // my procedures
+
 
 /* constants (thou art not evil) */
 const float pi = 3.1416;          // good ole pi

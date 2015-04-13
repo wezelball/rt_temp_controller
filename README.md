@@ -28,3 +28,7 @@ There are some other bugs that I want to squash before refactoring.
 
 Also note that the pot should adjust the setpoint as well as moving the
 window to center the setpoint in it.
+
+04/12/15
+Setup to use a Raspberry Pi model B to develop code for the Arduino.
+Upgraded GLCD to OpenGLCD.
