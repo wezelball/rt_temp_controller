@@ -21,10 +21,12 @@
 #include <OneWire.h>
 // PID library
 #include <PID_v1.h>
-
 // My procedures
 #include "procedures.c"           // my procedures
 
+// Identfiers for temperature controllers
+#define DS18S20_ID 0x10
+#define DS18B20_ID 0x28
 
 /* constants (thou art not evil) */
 const float pi = 3.1416;          // good ole pi
@@ -68,16 +70,23 @@ int ch2Offset;
  * 
  */
 int lastSwitchState;
-
 float ch1Setpoint[107];          // ch.1 temperature setpoint
 float ch2Setpoint[107];          // ch.2 temperature setpoint
 float y1[107];                   // this is the channel 1 y array
 float y2[107];                   // LCDXMax - LCDXMin
+double setpoint, Input, Output;  // for the temperature PID
+float last_temperature;
+
+struct ds1820_temperature {
+  boolean dataValid;
+  float degreesC;
+};
 
 /* Inputs/Outputs */
 int potRawInput = A0;
-int ch1Switch = 	A2;
-int ch2Switch = 	A1;
+int ch1Switch = A2;
+int ch2Switch = A1;
+OneWire ds(A3);                  // onwire DS18B20 newtork on A3
     
 void setup()  {
 	// GLCD
@@ -164,12 +173,71 @@ void drawDot(int x, float y, float yMin, float yMax)
   GLCD.SetDot(xToScreen(x,LCDXMin,LCDXMax), yToScreen(y,LCDYMin,LCDYMax,yMin,yMax), BLACK);
 }
 
+struct ds1820_temperature getTemperature(){
+  struct ds1820_temperature temp;
+  byte i;
+  byte present = 0;
+  byte data[12];
+  byte addr[8];
+  //find a device
+  if (!ds.search(addr)) {
+    ds.reset_search();
+    temp.dataValid=false;
+    // Note
+    // This search fails every other iteration
+    // I am properly handling it, but
+    // fix would be nice
+    //Serial.println("can't find device");
+    return temp;
+  }
+  if (OneWire::crc8( addr, 7) != addr[7]) {
+    temp.dataValid=false;
+    //Serial.println("CRC failure");
+    return temp;
+ }
+ if (addr[0] != DS18S20_ID && addr[0] != DS18B20_ID) {
+   temp.dataValid=false;
+   //Serial.println("can't identify device");
+   return temp;
+ }
+ ds.reset();
+ ds.select(addr);
+ // Start conversion
+ ds.write(0x44, 1);
+ // Wait some time...
+ delay(850);
+ present = ds.reset();
+ ds.select(addr);
+ // Issue Read scratchpad command
+ ds.write(0xBE);
+ // Receive 9 bytes
+ for ( i = 0; i < 9; i++) {
+   data[i] = ds.read();
+ }
+ // Calculate temperature value
+ temp.degreesC = ( (data[1] << 8) + data[0] )*0.0625;
+ temp.dataValid = true;
+ return temp;
+}
+
 void loop()
 {
-	/* Handle channel selection by flpping channel switch */
-	if (digitalRead(ch1Switch) == HIGH)
-	{
-		// This is true only when switching from opposite channel
+
+  struct ds1820_temperature temperature = getTemperature();
+  
+  if (temperature.dataValid) {
+    Input = (double)temperature.degreesC;
+    last_temperature = temperature.degreesC; 
+  } else {
+    Input = (double)last_temperature;
+  }
+
+  Serial.println(Input);
+
+  /* Handle channel selection by flpping channel switch */
+  if (digitalRead(ch1Switch) == HIGH)
+    {
+      // This is true only when switching from opposite channel
       if (channelSelected != 1)
       {
         channelSelected = 1;
