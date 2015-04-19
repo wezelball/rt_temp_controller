@@ -260,11 +260,6 @@ void loop()
   npn_ch1_level = int(Output) + Bias;
   error = Input - Setpoint;
   
-  // Read the potentiometer, and modify the setpoint
-  //pot_value = analogRead(POTINPUT);
-  //Setpoint = map(pot_value, 0, 1023, 0.0, 50.0);
-  //Setpoint = 37.0;  // just for testing
-  
   // Write to the external driver circuitry
   analogWrite(npn_ch1, npn_ch1_level); //Write this new value out to the port
 
@@ -279,9 +274,7 @@ void loop()
       j = 0;
       GLCD.ClearScreen();
       /* Set the offet value so display does not jump */
-      //ch1Offset = convertRawPotValue(analogRead(A0), 0, 40);
       ch1Offset = (int) Input;
-      //y1Center = (float)Input;  // set offset to match current temperature
       Setpoint = Input + 5.0;   // match setpoint to current temperature plus a margin     
     }
     // True if switching from any other switch position
@@ -289,14 +282,12 @@ void loop()
     if (lastSwitchState != 1)
     {
       lastSwitchState = 1;
-      //ch1Offset = convertRawPotValue(analogRead(A0), 0, 40);
       ch1Offset = (int) Input;
       //y1Center = (float)Input;  // set offset to match current temperature
       Setpoint = Input + 5.0;   // match setpoint to current temperature plus a margin
     }
     else  // allow temperature window adjustment with the pot
     {
-      //y1Center = y1OldCenter + (convertRawPotValue(analogRead(A0), 0, 40) - ch1Offset);
       y1Center = convertRawPotValue(analogRead(A0), 0, 40) + ch1Offset;
       y1Min = y1Center - y1Window/2;
       y1Max = y1Center + y1Window/2;
@@ -337,14 +328,12 @@ void loop()
   if (digitalRead(ch1Switch) == LOW && digitalRead(ch2Switch) == LOW)
     lastSwitchState = 0;  
 
-  // an equation with a little noise
-  //y1[i] = 21.0 + 0.002 * random(-100,100);  // simulated noisy temperature
-  //ch1Setpoint[i]=21.0;
   y1[i] = Input;	// this is a real temperature
   ch1Setpoint[i] = Setpoint;	// channel 1 setpoint
   
-  y2[i] = 32.0 + 0.004 * random(-100,100);  // simulated noisy temperature
-  ch2Setpoint[i]=32.0;
+	// an equation with a little noise
+	y2[i] = 32.0 + 0.004 * random(-100,100);  // simulated noisy temperature
+	ch2Setpoint[i]=32.0;
 
   // update the axis and graph header values
   if (channelSelected == 1) 
