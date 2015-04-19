@@ -32,3 +32,21 @@ window to center the setpoint in it.
 04/12/15
 Setup to use a Raspberry Pi model B to develop code for the Arduino.
 Upgraded GLCD to OpenGLCD.
+
+04/18/15
+I have a functioning live display for channel 1 LNA port, but I need 
+to rethink the way the program works, as my current program is not
+very useful.
+
+When the switch is flipped to a channel position, the setpoint for that 
+channel should be initialized at the current temperature. The pot should
+allow adjustment above/below that temperature by a limited amount.  
+When the switch is thrown to the center "neutral" position, the window
+size around the setpoint should be adjustable. 
+
+If the switch is returned to that channel position, the setpoint should
+not change until the pot is moved, and the window size should remain
+constant.
+
+If the switch is moved to the other channel, the screen should update
+to that channel and adjustments would be the same as above.

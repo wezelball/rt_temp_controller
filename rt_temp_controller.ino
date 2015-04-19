@@ -54,7 +54,7 @@ float y2Max;
 /* The plot center and window values */
 float y1Center = 20;
 float y1OldCenter = 20;
-float y1Window = 10;
+float y1Window = 2;
 float y2Center = 30;
 float y2OldCenter = 30;
 float y2Window = 5;
@@ -136,7 +136,7 @@ void setup()  {
  * Prints current information line temperature, output,
  * and setpoint to go at the top of the display
  */
-void printCurrent(int channel, float value, int setpoint, int output) {
+void printCurrent(int channel, float value, double setpoint, int output) {
   GLCD.GotoXY(0, 0);
   GLCD.Puts("Ch: ");
   GLCD.GotoXY(20,0);
@@ -144,10 +144,11 @@ void printCurrent(int channel, float value, int setpoint, int output) {
   GLCD.GotoXY(30,0);
   GLCD.print(value,1);        // temperature value
   GLCD.GotoXY(60,0);
-  GLCD.Puts("S: ");
+  GLCD.Puts("S: ");           // setpoint
   GLCD.GotoXY(70,0);
-  potRawInput = analogRead(A0);
-  GLCD.print(convertRawPotValue(potRawInput, 0, 10),2); //setpoint
+  //potRawInput = analogRead(A0);
+  //GLCD.print(convertRawPotValue(potRawInput, 0, 10),2); //setpoint
+  GLCD.print(setpoint,1); //setpoint
   GLCD.GotoXY(96,0);
   GLCD.Puts("O: ");
   GLCD.GotoXY(110,0);
@@ -248,6 +249,8 @@ void loop()
     Input = (double)last_temperature;
   }
 
+  Serial.print(Setpoint);
+  Serial.print("\t");
   Serial.print(Input);
   Serial.print("\t");
   Serial.println(npn_ch1_level);
@@ -260,11 +263,10 @@ void loop()
   // Read the potentiometer, and modify the setpoint
   //pot_value = analogRead(POTINPUT);
   //Setpoint = map(pot_value, 0, 1023, 0.0, 50.0);
-  Setpoint = 37.0;  // just for testing
+  //Setpoint = 37.0;  // just for testing
   
   // Write to the external driver circuitry
   analogWrite(npn_ch1, npn_ch1_level); //Write this new value out to the port
-
 
   /* Handle channel selection by flpping channel switch */
   if (digitalRead(ch1Switch) == HIGH)
@@ -277,18 +279,25 @@ void loop()
       j = 0;
       GLCD.ClearScreen();
       /* Set the offet value so display does not jump */
-      ch1Offset = convertRawPotValue(analogRead(A0), 0, 40);
+      //ch1Offset = convertRawPotValue(analogRead(A0), 0, 40);
+      ch1Offset = (int) Input;
+      //y1Center = (float)Input;  // set offset to match current temperature
+      Setpoint = Input + 5.0;   // match setpoint to current temperature plus a margin     
     }
     // True if switching from any other switch position
     // like a rising-edge detector
     if (lastSwitchState != 1)
     {
       lastSwitchState = 1;
-      ch1Offset = convertRawPotValue(analogRead(A0), 0, 40);
+      //ch1Offset = convertRawPotValue(analogRead(A0), 0, 40);
+      ch1Offset = (int) Input;
+      //y1Center = (float)Input;  // set offset to match current temperature
+      Setpoint = Input + 5.0;   // match setpoint to current temperature plus a margin
     }
     else  // allow temperature window adjustment with the pot
     {
-      y1Center = y1OldCenter + (convertRawPotValue(analogRead(A0), 0, 40) - ch1Offset); 
+      //y1Center = y1OldCenter + (convertRawPotValue(analogRead(A0), 0, 40) - ch1Offset);
+      y1Center = convertRawPotValue(analogRead(A0), 0, 40) + ch1Offset;
       y1Min = y1Center - y1Window/2;
       y1Max = y1Center + y1Window/2;
       GLCD.ClearScreen();
@@ -329,14 +338,17 @@ void loop()
     lastSwitchState = 0;  
 
   // an equation with a little noise
-  y1[i] = 21.0 + 0.002 * random(-100,100);  // simulated noisy temperature
-  ch1Setpoint[i]=21.0;
+  //y1[i] = 21.0 + 0.002 * random(-100,100);  // simulated noisy temperature
+  //ch1Setpoint[i]=21.0;
+  y1[i] = Input;	// this is a real temperature
+  ch1Setpoint[i] = Setpoint;	// channel 1 setpoint
+  
   y2[i] = 32.0 + 0.004 * random(-100,100);  // simulated noisy temperature
   ch2Setpoint[i]=32.0;
 
   // update the axis and graph header values
   if (channelSelected == 1) 
-    printCurrent(1,y1[i],30,80 );
+    printCurrent(1,y1[i],Setpoint,npn_ch1_level );
   else
     printCurrent(2,y2[i],30,80 );
 
