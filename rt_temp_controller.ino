@@ -59,12 +59,9 @@ float y2Center = 30;
 float y2OldCenter = 30;
 float y2Window = 5;
 
-/* 
- * These values are added to or subtracted from the center value
- * for that channel
- */
-int ch1Offset;
-int ch2Offset;
+float ch1PotOffset;	// the current potentiometer offset from initial
+float ch1PotInitial;	// the inital pot value when switch thrown to ch1
+float ch1PotSetpoint;
 
 /* Need to know when switch first thrown to position 
  * 
@@ -273,22 +270,31 @@ void loop()
       i = 0;
       j = 0;
       GLCD.ClearScreen();
-      /* Set the offet value so display does not jump */
-      ch1Offset = (int) Input;
-      Setpoint = Input + 5.0;   // match setpoint to current temperature plus a margin     
+      Setpoint = Input;   // match setpoint to current temperature plus a margin
+      y1Center = (float)Input;	// center the display on current temp
+      ch1PotOffset = 0.0;
+      ch1PotInitial = convertRawPotValue(analogRead(A0), 0, 10);
+      ch1PotSetpoint = (float)Setpoint;
     }
     // True if switching from any other switch position
     // like a rising-edge detector
     if (lastSwitchState != 1)
     {
       lastSwitchState = 1;
-      ch1Offset = (int) Input;
-      //y1Center = (float)Input;  // set offset to match current temperature
-      Setpoint = Input + 5.0;   // match setpoint to current temperature plus a margin
+      GLCD.ClearScreen();
+      Setpoint = Input;   // match setpoint to current temperature plus a margin
+      y1Center = (float)Input;	// center the display on current temp
+      ch1PotOffset = 0.0;
+      ch1PotInitial = convertRawPotValue(analogRead(A0), 0, 10);
+      ch1PotSetpoint = (float)Setpoint;
     }
     else  // allow temperature window adjustment with the pot
     {
-      y1Center = convertRawPotValue(analogRead(A0), 0, 40) + ch1Offset;
+		// Read the potentiometer  and calculate setpoint
+		ch1PotOffset = (convertRawPotValue(analogRead(A0), 0, 10) - ch1PotInitial);
+		Setpoint  = ch1PotSetpoint + ch1PotOffset;
+		
+		// Recalculate the screen limits
       y1Min = y1Center - y1Window/2;
       y1Max = y1Center + y1Window/2;
       GLCD.ClearScreen();
@@ -304,19 +310,16 @@ void loop()
       i = 0;
       j = 0;
       GLCD.ClearScreen();
-      /* Set the offet value so display does not jump */
-      ch2Offset = convertRawPotValue(analogRead(A0), 0, 40);
     }
     // True if switching from any other switch position
     // like a rising-edge detector
     if (lastSwitchState != 2)
     {
       lastSwitchState = 2;
-      ch2Offset = convertRawPotValue(analogRead(A0), 0, 40);
     }
     else  // allow temperature window adjustment with the pot
     {
-      y2Center = y2OldCenter + (convertRawPotValue(analogRead(A0), 0, 40) - ch2Offset); 
+       y2Center = y2OldCenter + (convertRawPotValue(analogRead(A0), 0, 40)); 
       y2Center = convertRawPotValue(analogRead(A0), 0, 40);
       y2Min = y2Center - y2Window/2;
       y2Max = y2Center + y2Window/2;
