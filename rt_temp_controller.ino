@@ -177,13 +177,15 @@ void printCurrent(int channel, float value, double setpoint, int output) {
 /* Erase dot on the screen by plottiing in background color */
 void eraseDot(int x, float y, float yMin, float yMax)
 {
-  GLCD.SetDot(xToScreen(x,LCDXMin,LCDXMax), yToScreen(y,LCDYMin,LCDYMax,yMin,yMax), WHITE);
+	if (y >= yMin && y <= yMax)	// only if y data in graph boundary
+		GLCD.SetDot(xToScreen(x,LCDXMin,LCDXMax), yToScreen(y,LCDYMin,LCDYMax,yMin,yMax), WHITE);
 }
 
 /* Plot dot on the screen */
 void drawDot(int x, float y, float yMin, float yMax)
 {
-  GLCD.SetDot(xToScreen(x,LCDXMin,LCDXMax), yToScreen(y,LCDYMin,LCDYMax,yMin,yMax), BLACK);
+	if (y >= yMin && y <= yMax)	// only if y data in graph boundary
+		GLCD.SetDot(xToScreen(x,LCDXMin,LCDXMax), yToScreen(y,LCDYMin,LCDYMax,yMin,yMax), BLACK);
 }
 
 struct ds1820_temperature getTemperature(){
@@ -319,7 +321,7 @@ void loop()
     }
     else  // allow temperature window adjustment with the pot
     {
-       y2Center = y2OldCenter + (convertRawPotValue(analogRead(A0), 0, 40)); 
+      y2Center = y2OldCenter + (convertRawPotValue(analogRead(A0), 0, 40)); 
       y2Center = convertRawPotValue(analogRead(A0), 0, 40);
       y2Min = y2Center - y2Window/2;
       y2Max = y2Center + y2Window/2;
@@ -327,22 +329,24 @@ void loop()
     }
   }
 
-  // Update last switch state if switch in center position
-  if (digitalRead(ch1Switch) == LOW && digitalRead(ch2Switch) == LOW)
-    lastSwitchState = 0;  
+	// Update last switch state if switch in center position
+	if (digitalRead(ch1Switch) == LOW && digitalRead(ch2Switch) == LOW)
+	lastSwitchState = 0;  
 
-  y1[i] = Input;	// this is a real temperature
-  ch1Setpoint[i] = Setpoint;	// channel 1 setpoint
+	y1[i] = Input;	// this is a real temperature
+	ch1Setpoint[i] = Setpoint;	// channel 1 setpoint
   
 	// an equation with a little noise
 	y2[i] = 32.0 + 0.004 * random(-100,100);  // simulated noisy temperature
 	ch2Setpoint[i]=32.0;
 
-  // update the axis and graph header values
-  if (channelSelected == 1) 
-    printCurrent(1,y1[i],Setpoint,npn_ch1_level );
-  else
-    printCurrent(2,y2[i],30,80 );
+	// update the axis and graph header values
+	if (channelSelected == 1) 
+		printCurrent(1,y1[i],Setpoint,npn_ch1_level );
+	else
+		printCurrent(2,y2[i],30,80 );
+
+	/* Below this is where the temperature graph is being drawn on screen */
 
   // We are now plotting past end of graph, so 
   // we need to scroll

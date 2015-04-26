@@ -1,0 +1,20 @@
+Controller Wiring
+
+CPC to oven connections
+
+Pin	Color		Signal		Description
+1		red		LNA+			12 VDC to internal precision regulator
+2		black		LNA-			0 VDC to internal precision regulator
+3		blue		BULB+			12 VDC power to light bulb heater(s)
+4		brown		BULB-			power transistor collector to bulb(s) negative
+5		green		TEMP+			5VDC power to temp sensor ds18B20 (not used)
+6		orange	TEMP-			ground to temp sensor ds18B20 (not used)
+7		white		TEMPDATA		temperature data from DS18B20 to arduino
+
+Arduino Connections
+
+Pin	Signal			Description
+A0		potRawInput		setpoint adjustment potentiometer
+A1		ch2Switch		channel switch channel 2 selection position
+A2		ch1Switch		channel switch channel 1 selection position
+A3		temp				temperature data from ds18B20 sensor network
