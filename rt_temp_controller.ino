@@ -241,9 +241,14 @@ void loop()
   struct ds1820_temperature temperature = getTemperature();
 
   if (temperature.dataValid) {
-    Input = (double)temperature.degreesC;
-    last_temperature = temperature.degreesC; 
-  } 
+		if (temperature.degreesC > 0.0 && temperature.degreesC < 70.0) {
+			Input = (double)temperature.degreesC;
+			last_temperature = temperature.degreesC; 
+		}
+		else {
+			Input = (double)last_temperature;
+		}
+	} 
   else {
     Input = (double)last_temperature;
   }
