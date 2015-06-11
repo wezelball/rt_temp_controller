@@ -261,11 +261,13 @@ void loop()
 
   // Execute the PID algrithm
   lightbulbPID.Compute();
-  npn_ch1_level = int(Output) + Bias;
+  // Output disabled until I can figure out problem with sensor
+  //npn_ch1_level = int(Output) + Bias;
   error = Input - Setpoint;
   
   // Write to the external driver circuitry
-  analogWrite(npn_ch1, npn_ch1_level); //Write this new value out to the port
+  // Output disabled until I can figure out problem with sensor
+  //analogWrite(npn_ch1, npn_ch1_level); //Write this new value out to the port
 
   /* Handle channel selection by flpping channel switch */
   if (digitalRead(ch1Switch) == HIGH)
